@@ -42,18 +42,18 @@ export default async function LocationsPage() {
   const data = {
     total,
     withLocation,
-    byCountry: byCountry.map(r => ({
+    byCountry: byCountry.map((r: any) => ({
       country:     r.country,
       countryCode: r.countryCode,
       count:       r._count.id,
       pct:         total > 0 ? Math.round((r._count.id / total) * 100) : 0,
     })),
-    byCity: byCity.map(r => ({
+    byCity: byCity.map((r: any) => ({
       city: r.city,
       country: r.country,
       count: r._count.id
     })),
-    byRegion: byRegion.map(r => ({
+    byRegion: byRegion.map((r: any) => ({
       region: r.region,
       country: r.country,
       count: r._count.id
