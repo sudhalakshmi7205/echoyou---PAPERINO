@@ -73,7 +73,7 @@ export default async function AdminInterviewsPage() {
                         />
                         <div>
                           <div className="font-semibold text-gray-200">
-                            {user ? `${user.firstName} ${user.lastName}` : 'Unknown User'}
+                            {user ? `${(user as any).firstName} ${(user as any).lastName}` : 'Unknown User'}
                           </div>
                           <div className="text-xs text-gray-500 font-mono">
                             {interview.clerkId.slice(-6)}
