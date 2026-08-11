@@ -10,7 +10,7 @@ export default async function AdminInterviewsPage() {
 
   // To map clerkIds to actual users, we can fetch all users
   const users = await db.user.findMany()
-  const userMap = new Map(users.map(u => [u.clerkId, u]))
+  const userMap = new Map(users.map((u: any) => [u.clerkId, u]))
 
   return (
     <div className="space-y-6">
