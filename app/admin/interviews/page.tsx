@@ -67,7 +67,7 @@ export default async function AdminInterviewsPage() {
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-3">
                         <img 
-                          src={user?.imageUrl || '/placeholder.svg'} 
+                          src={(user as any)?.imageUrl || '/placeholder.svg'} 
                           alt="Avatar" 
                           className="w-8 h-8 rounded-full bg-gray-800"
                         />
