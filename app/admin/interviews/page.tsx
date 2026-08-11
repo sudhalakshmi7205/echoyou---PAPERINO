@@ -57,7 +57,7 @@ export default async function AdminInterviewsPage() {
                     No interviews found.
                   </td>
                 </tr>
-              ) : interviews.map(interview => {
+              ) : interviews.map((interview: any) => {
                 const user = userMap.get(interview.clerkId)
                 const isCompleted = interview.status === 'completed'
                 const isInProgress = interview.status === 'in_progress'
