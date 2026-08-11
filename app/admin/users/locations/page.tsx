@@ -58,7 +58,7 @@ export default async function LocationsPage() {
       country: r.country,
       count: r._count.id
     })),
-    recent: recent.map(r => ({
+    recent: recent.map((r: any) => ({
       ...r,
       createdAt: r.createdAt.toISOString()
     })),
