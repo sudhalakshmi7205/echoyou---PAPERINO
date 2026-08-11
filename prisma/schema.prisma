@@ -1,0 +1,346 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["driverAdapters"]
+}
+
+datasource db {
+  provider  = "postgresql"
+}
+
+model User {
+  id        String   @id @default(cuid())
+  clerkId   String   @unique
+  email     String   @unique
+  firstName String?
+  lastName  String?
+  imageUrl  String?
+  isAdmin   Boolean  @default(false)
+  
+  // Location fields
+  ipAddress   String?
+  city        String?
+  region      String?
+  country     String?
+  countryCode String?
+  latitude    Float?
+  longitude   Float?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  profile   Profile?
+}
+
+model Profile {
+  id                  String   @id @default(cuid())
+  clerkId             String   @unique
+  user                User     @relation(fields: [clerkId], references: [clerkId], onDelete: Cascade)
+  onboardingCompleted Boolean  @default(false)
+
+  // Phase 2 onboarding fields
+  role                String?
+  experience          String?
+  languages           String[]  // ["TypeScript", "Python"]
+  companies           String[]  // ["Google", "Stripe"]
+  resumeUrl           String?
+  goal                String?
+  resumeUpdatedAt     DateTime?
+
+  // Social Links & Identity
+  githubUrl           String?
+  linkedinUrl         String?
+  portfolioUrl        String?
+  aiBio               String?   @db.Text
+  customAvatarUrl     String?
+
+  // Gamification fields
+  points              Int      @default(0)
+  interviewsCompleted Int      @default(0)
+  currentStreak       Int      @default(0)
+  badges              String[]
+
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+}
+
+model Interview {
+  id              String   @id @default(cuid())
+  clerkId         String
+
+  // Configuration
+  type            String   // 'technical' | 'behavioural' | 'system_design' | 'coding' | 'mixed'
+  role            String   // 'Frontend Engineer', 'Backend Engineer' etc.
+  company         String?  // 'Google', 'Stripe' etc. — optional
+  difficulty      String   // 'easy' | 'medium' | 'hard'
+  duration        Int      // minutes — 15 | 30 | 45 | 60
+  language        String   // 'english' | 'hindi' etc.
+  voiceId         String?  // ElevenLabs voice ID for Phase 7
+  interviewerVoice String? // 'male' | 'female'
+  interviewerAvatar String? // ID or name of the avatar
+  cameraEnabled   Boolean  @default(false)
+  mediaMode       String?  @default("video_audio") // 'video_audio' | 'audio_only' | 'video_only'
+
+  // State
+  status          String   @default("draft") // 'draft' | 'ready' | 'in_progress' | 'completed' | 'abandoned'
+
+  // AI generated content
+  questions       Json?
+  systemPrompt    String?  @db.Text
+
+  // Results
+  score           Float?
+  duration_actual Int?
+  completedAt     DateTime?
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  // Relations
+  messages        Message[]
+  codeSubmissions CodeSubmission[]
+  report          Report?
+  shareableReport ShareableReport?
+}
+
+model InterviewTemplate {
+  id          String   @id @default(cuid())
+  name        String
+  type        String
+  role        String
+  company     String?
+  difficulty  String
+  duration    Int
+  language    String
+  isPublic    Boolean  @default(true)
+  clerkId     String?
+  createdAt   DateTime @default(now())
+}
+
+model Message {
+  id          String    @id @default(cuid())
+  interviewId String
+  interview   Interview @relation(fields: [interviewId], references: [id], onDelete: Cascade)
+
+  role        String   // 'assistant' | 'user'
+  content     String   @db.Text
+  type        String   // 'question' | 'answer' | 'followup' | 'system'
+
+  // Metadata
+  questionIndex Int?   // which question number this is
+  thinkingMs    Int?   // how long Groq took to respond
+  audioUrl      String? // TTS audio stored for replay
+
+  createdAt   DateTime @default(now())
+}
+
+model InterviewState {
+  id            String   @id @default(cuid())
+  interviewId   String   @unique
+  currentPhase  String   // 'intro' | 'questioning' | 'coding' | 'wrap_up'
+  questionIndex Int      @default(0)
+  questionsAsked String[] // tracks asked question IDs to avoid repeats
+  topicsCovered String[] // e.g. ['arrays', 'system design', 'behavioural']
+  updatedAt     DateTime @updatedAt
+}
+
+model CodeSubmission {
+  id            String    @id @default(cuid())
+  interviewId   String
+  interview     Interview @relation(fields: [interviewId], references: [id], onDelete: Cascade)
+
+  language      String    // 'javascript' | 'python' | 'go' etc.
+  code          String    @db.Text
+  problemId     String
+
+  // Execution results
+  status        String    // 'pending' | 'passed' | 'partial' | 'failed' | 'error'
+  testsPassed   Int       @default(0)
+  testsTotal    Int       @default(0)
+  stdout        String?   @db.Text
+  stderr        String?   @db.Text
+  executionMs   Int?
+
+  // AI review (Phase 9)
+  aiReview      String?   @db.Text
+  timeComplexity  String?
+  spaceComplexity String?
+
+  createdAt     DateTime  @default(now())
+}
+
+model CodingProblem {
+  id          String   @id @default(cuid())
+  title       String
+  slug        String   @unique
+  difficulty  String
+  description String   @db.Text
+  examples    Json     // [{input, output, explanation}]
+  constraints String[]
+  testCases   Json     // visible: [{input, expected}]
+  hiddenCases Json     // hidden: [{input, expected}] — never sent to client
+  tags        String[] // ['arrays', 'dynamic-programming']
+  companies   String[] // ['Google', 'Meta']
+  starterCode Json     // {javascript: '...', python: '...', go: '...'}
+}
+
+model Report {
+  id            String    @id @default(cuid())
+  interviewId   String    @unique
+  interview     Interview @relation(fields: [interviewId], references: [id], onDelete: Cascade)
+
+  // Overall
+  overallScore      Float
+  verdict           String  // 'strong_hire' | 'hire' | 'borderline' | 'no_hire'
+
+  // 7 dimension scores (0-100)
+  technicalScore        Float
+  communicationScore    Float
+  problemSolvingScore   Float
+  confidenceScore       Float
+  codingScore           Float?  // null if no coding round
+  behaviouralScore      Float
+  resumeKnowledgeScore  Float
+
+  // AI narrative feedback
+  strengths         String[]
+  weaknesses        String[]
+  mistakes          Json      // [{question, mistake, correction}]
+  improvementPlan   Json      // {thirtyDay, sixtyDay, ninetyDay, resources}
+
+  // Per-question breakdown
+  questionReviews   Json      // [{question, answer, score, feedback}]
+
+  // Coding specific
+  codeQuality       String?
+  timeComplexity    String?
+  spaceComplexity   String?
+  codingFeedback    String?
+
+  generatedAt   DateTime  @default(now())
+}
+
+model Achievement {
+  id        String   @id @default(cuid())
+  clerkId   String
+  type      String   // 'streak_7', 'first_interview', 'score_80', etc.
+  earnedAt  DateTime @default(now())
+}
+
+model Resume {
+  id          String          @id @default(cuid())
+  clerkId     String
+  fileName    String
+  fileUrl     String
+  fileSize    Int
+  isActive    Boolean         @default(true)
+  parsedText  String?         @db.Text
+  aiSummary   String?         @db.Text
+  skills      String[]
+  createdAt   DateTime        @default(now())
+
+  versions    ResumeVersion[]
+}
+
+model ResumeVersion {
+  id        String   @id @default(cuid())
+  resumeId  String
+  resume    Resume   @relation(fields: [resumeId], references: [id], onDelete: Cascade)
+  fileName  String
+  fileUrl   String
+  createdAt DateTime @default(now())
+}
+
+model ShareableReport {
+  id          String   @id @default(cuid())
+  interviewId String   @unique
+  interview   Interview @relation(fields: [interviewId], references: [id], onDelete: Cascade)
+  token       String   @unique @default(cuid())
+  expiresAt   DateTime
+  createdAt   DateTime @default(now())
+}
+
+model ResumeATSAnalysis {
+  id              String   @id @default(cuid())
+  resumeId        String
+  clerkId         String
+  targetRole      String
+  jobDescription  String   @db.Text
+  matchScore      Int
+  formatScore     Int
+  keywordScore    Int
+  missingKeywords String[]
+  feedback        Json     // { strengths, weaknesses, actionableSteps }
+  createdAt       DateTime @default(now())
+}
+
+model Roadmap {
+  id          String   @id @default(cuid())
+  clerkId     String
+  currentRole String
+  desiredRole String
+  skills      String[]
+  timeline    Json     // Array of steps
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @default(now()) @updatedAt
+}
+
+model Webhook {
+  id        String   @id @default(cuid())
+  clerkId   String   @unique
+  url       String
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+}
+
+model UserPreferences {
+  id                 String   @id @default(cuid())
+  clerkId            String   @unique
+  preferredLanguage  String   @default("english")
+  interviewerAvatar  String   @default("avatar_1")
+  interviewerVoice   String   @default("female")
+  cameraEnabled      Boolean  @default(false)
+  emailOnComplete    Boolean  @default(true)
+  emailWeeklySummary Boolean  @default(true)
+  defaultDifficulty  String   @default("medium")
+  defaultDuration    Int      @default(30)
+  defaultLanguage    String   @default("english")
+  defaultVoice       String   @default("female")
+  autoStartCountdown Boolean  @default(true)
+  emailTips          Boolean  @default(true)
+  inAppReminders     Boolean  @default(true)
+  inAppAchievements  Boolean  @default(true)
+  updatedAt          DateTime @default(now()) @updatedAt
+}
+
+model AnalyticsEvent {
+  id        String   @id @default(cuid())
+  clerkId   String?
+  event     String
+  properties Json?
+  timestamp DateTime @default(now())
+}
+
+model UserRoadmapPreferences {
+  id            String   @id @default(cuid())
+  clerkId       String   @unique
+  role          String?
+  duration      String?
+  startDate     DateTime?
+  language      String?
+  company       String?
+  dsaDifficulty String?
+  learningStyle String?
+  updatedAt     DateTime @updatedAt
+}
+
+// 🛡️ System Settings Table for Storing Admin Feature Toggles & AI Models in Supabase
+model SystemSetting {
+  id        String   @id @default(cuid())
+  key       String   @unique
+  value     Json
+  updatedAt DateTime @updatedAt
+}

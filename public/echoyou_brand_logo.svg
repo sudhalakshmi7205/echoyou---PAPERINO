@@ -1,0 +1,65 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="120" height="120">
+  <defs>
+    <!-- Outer Ring Gradient: Magenta to Blue -->
+    <linearGradient id="magentaBlueGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#D946EF" />
+      <stop offset="50%" stop-color="#8B5CF6" />
+      <stop offset="100%" stop-color="#3B82F6" />
+    </linearGradient>
+
+    <!-- Inner Ring Gradient: Bright Cyan -->
+    <linearGradient id="cyanGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#38BDF8" />
+      <stop offset="100%" stop-color="#06B6D4" />
+    </linearGradient>
+
+    <!-- Neon Glow Filters -->
+    <filter id="magentaGlow" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="3.5" result="blur" />
+      <feMerge>
+        <feMergeNode in="blur" />
+        <feMergeNode in="SourceGraphic" />
+      </feMerge>
+    </filter>
+
+    <filter id="cyanGlow" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="3" result="blur" />
+      <feMerge>
+        <feMergeNode in="blur" />
+        <feMergeNode in="SourceGraphic" />
+      </feMerge>
+    </filter>
+  </defs>
+
+  <!-- Transparent Background (Dark background rect removed) -->
+
+  <!-- Outer Dotted Orbiting Particles (24 Dots) -->
+  <circle cx="60" cy="8" r="1.5" fill="#8B5CF6" opacity="0.85"/>
+  <circle cx="73" cy="9.7" r="1.5" fill="#8B5CF6" opacity="0.85"/>
+  <circle cx="85.3" cy="14.7" r="1.5" fill="#7C3AED" opacity="0.85"/>
+  <circle cx="95.3" cy="22.7" r="1.5" fill="#6D28D9" opacity="0.85"/>
+  <circle cx="102.3" cy="33" r="1.5" fill="#4C1D95" opacity="0.85"/>
+  <circle cx="105.3" cy="45" r="1.5" fill="#3B82F6" opacity="0.85"/>
+  <circle cx="105.3" cy="58" r="1.5" fill="#2563EB" opacity="0.85"/>
+  <circle cx="102.3" cy="70" r="1.5" fill="#1D4ED8" opacity="0.85"/>
+  <circle cx="95.3" cy="80.3" r="1.5" fill="#0284C7" opacity="0.85"/>
+  <circle cx="85.3" cy="88.3" r="1.5" fill="#0369A1" opacity="0.85"/>
+  <circle cx="73" cy="93.3" r="1.5" fill="#0EA5E9" opacity="0.85"/>
+  <circle cx="60" cy="95" r="1.5" fill="#06B6D4" opacity="0.85"/>
+  <circle cx="47" cy="93.3" r="1.5" fill="#0891B2" opacity="0.85"/>
+  <circle cx="34.7" cy="88.3" r="1.5" fill="#3B82F6" opacity="0.85"/>
+  <circle cx="24.7" cy="80.3" r="1.5" fill="#6366F1" opacity="0.85"/>
+  <circle cx="17.7" cy="70" r="1.5" fill="#818CF8" opacity="0.85"/>
+  <circle cx="14.7" cy="58" r="1.5" fill="#A855F7" opacity="0.85"/>
+  <circle cx="14.7" cy="45" r="1.5" fill="#C084FC" opacity="0.85"/>
+  <circle cx="17.7" cy="33" r="1.5" fill="#D946EF" opacity="0.85"/>
+  <circle cx="24.7" cy="22.7" r="1.5" fill="#E879F9" opacity="0.85"/>
+  <circle cx="34.7" cy="14.7" r="1.5" fill="#F0ABFC" opacity="0.85"/>
+  <circle cx="47" cy="9.7" r="1.5" fill="#C084FC" opacity="0.85"/>
+
+  <!-- Outer Neon Ring (Magenta / Purple Gradient) -->
+  <circle cx="60" cy="51.5" r="37" fill="none" stroke="url(#magentaBlueGrad)" stroke-width="4.5" filter="url(#magentaGlow)"/>
+
+  <!-- Inner Neon Ring (Cyan / Blue Gradient) -->
+  <circle cx="60" cy="51.5" r="23" fill="none" stroke="url(#cyanGrad)" stroke-width="4" filter="url(#cyanGlow)"/>
+</svg>
