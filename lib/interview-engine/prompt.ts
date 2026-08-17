@@ -25,6 +25,7 @@ interface PromptContext {
     minutesElapsed: number
   }
   activeProblemContext?: string | null
+  relevantResumeChunks?: string[]
 }
 
 export async function getActiveSystemPrompt(type: string): Promise<string | null> {
@@ -32,23 +33,32 @@ export async function getActiveSystemPrompt(type: string): Promise<string | null
 }
 
 export async function buildSystemPrompt(ctx: PromptContext): Promise<string> {
-  const { interview, profile, resume, state } = ctx
+  const { interview, profile, resume, state, relevantResumeChunks } = ctx
 
   const companyContext = interview.company
     ? `You are interviewing this candidate for a ${interview.role} position at ${interview.company}.
        Use ${interview.company}'s known interview style — ${getCompanyStyle(interview.company)}.`
     : `You are interviewing this candidate for a ${interview.role} position.`
 
-  const resumeContext = resume
-    ? `Candidate background:
+  let resumeContext = ''
+  if (interview.type === 'resume_followup' && relevantResumeChunks && relevantResumeChunks.length > 0) {
+    resumeContext = `VERIFIED CANDIDATE RESUME CHUNKS (Retrieved via RAG Semantic Vector Search):
+${relevantResumeChunks.map((chunk, idx) => `[Chunk #${idx + 1}]:\n${chunk}`).join('\n\n')}
+
+CRITICAL GROUNDING INSTRUCTION FOR RESUME FOLLOW-UP:
+- Your question MUST be explicitly grounded ONLY in the verified candidate resume chunks provided above.
+- Ask detailed, realistic follow-up questions inquiring about specific projects, technical decisions, tools, architecture, or metrics mentioned in these chunks.
+- Do NOT invent companies, tools, or responsibilities not documented in the verified chunks.`
+  } else if (resume) {
+    resumeContext = `Candidate background:
        ${resume.aiSummary || 'No summary'}
        
        Technical skills: ${resume.skills.join(', ')}
        
-       Use their actual work history to ask specific questions. For example, if they worked
-       on payments infrastructure, ask about the specific challenges they faced there.
-       Reference real companies and projects from their background.`
-    : `No resume provided. Ask general ${interview.role} questions.`
+       Use their actual work history to ask specific questions. Reference real companies and projects from their background.`
+  } else {
+    resumeContext = `No resume provided. Ask general ${interview.role} questions.`
+  }
 
   const difficultyMap = {
     easy: 'Ask foundational questions. Be encouraging. Allow follow-up hints if they struggle.',

@@ -242,6 +242,7 @@ model Resume {
   createdAt   DateTime        @default(now())
 
   versions    ResumeVersion[]
+  chunks      ResumeChunk[]
 }
 
 model ResumeVersion {
@@ -343,4 +344,19 @@ model SystemSetting {
   key       String   @unique
   value     Json
   updatedAt DateTime @updatedAt
+}
+
+model ResumeChunk {
+  id          String   @id @default(cuid())
+  resumeId    String
+  clerkId     String
+  chunkIndex  Int
+  section     String?  // 'Experience' | 'Education' | 'Projects' | 'Skills' | 'General'
+  content     String   @db.Text
+  embedding   Json     // Stores Float[] embedding vector
+  createdAt   DateTime @default(now())
+
+  resume      Resume   @relation(fields: [resumeId], references: [id], onDelete: Cascade)
+
+  @@index([clerkId, resumeId])
 }

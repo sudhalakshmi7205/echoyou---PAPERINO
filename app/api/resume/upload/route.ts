@@ -68,6 +68,10 @@ export async function POST(req: Request) {
       }
     })
 
+    // 5b. Generate and store semantic RAG chunks for Resume Follow-up
+    const { processAndStoreResumeChunks } = await import('@/lib/rag/retrieval')
+    await processAndStoreResumeChunks(clerkId, resume.id, parsedText)
+
     // 6. Save ATS Analysis if JD was provided
     if (jobDescription && ats) {
       await db.resumeATSAnalysis.create({

@@ -52,12 +52,41 @@ export async function POST(
     })
   }
 
+  // Perform RAG semantic chunk retrieval ONLY for resume_followup interview type
+  let relevantResumeChunks: string[] = []
+  if (interview.type === 'resume_followup' && resume) {
+    try {
+      const { retrieveRelevantResumeChunks } = await import('@/lib/rag/retrieval')
+      
+      // Dual-stage Query Construction:
+      // Stage 1 (First Question): Use role + summary + skills
+      // Stage 2 (Subsequent Questions): Use role + user's current message/answer
+      let searchQuery = ''
+      if (message === '[START_INTERVIEW]' || memory.length() === 0) {
+        searchQuery = `${interview.role} ${resume.aiSummary || ''} ${resume.skills?.join(' ') || ''}`.trim()
+      } else {
+        searchQuery = `${interview.role} ${message}`.trim()
+      }
+
+      const chunks = await retrieveRelevantResumeChunks({
+        clerkId: user.id,
+        resumeId: resume.id,
+        query: searchQuery,
+      })
+
+      relevantResumeChunks = chunks.map(c => c.content)
+    } catch (err: any) {
+      console.error(`[RAG_ROUTE_WARN] Gracefully falling back for interviewId="${resolvedParams.id}". Error: ${err.message || err}`)
+    }
+  }
+
   const promptContext = {
     interview: { type: interview.type, role: interview.role, company: interview.company, difficulty: interview.difficulty, duration: interview.duration },
     profile:   { experience: profile.experience, languages: profile.languages, goal: profile.goal },
     resume:    resume ? { aiSummary: resume.aiSummary, skills: resume.skills, parsedText: resume.parsedText } : null,
     state:     { currentPhase: state.currentPhase, questionIndex: state.questionIndex, topicsCovered: state.topicsCovered, minutesElapsed: 0 },
-    activeProblemContext
+    activeProblemContext,
+    relevantResumeChunks,
   }
 
   // Save user message to DB (unless it's the start trigger)
