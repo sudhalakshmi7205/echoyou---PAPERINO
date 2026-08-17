@@ -307,10 +307,22 @@ const STATS = [
 
 /* ─────────────── Main Component ─────────────── */
 export default function LandingClient({ isLoggedIn }: { isLoggedIn?: boolean }) {
-  const [introDone, setIntroDone] = useState(false)
+  const [introDone, setIntroDone] = useState(true)
+
+  useEffect(() => {
+    try {
+      const seen = localStorage.getItem('echoyou_intro_seen') || sessionStorage.getItem('echoyou_intro_seen')
+      if (!seen) {
+        setIntroDone(false)
+      }
+    } catch (e) {
+      setIntroDone(true)
+    }
+  }, [])
 
   const handleIntroComplete = () => {
     try {
+      localStorage.setItem('echoyou_intro_seen', 'true')
       sessionStorage.setItem('echoyou_intro_seen', 'true')
     } catch (e) {}
     setIntroDone(true)
