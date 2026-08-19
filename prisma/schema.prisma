@@ -347,16 +347,17 @@ model SystemSetting {
 }
 
 model ResumeChunk {
-  id          String   @id @default(cuid())
-  resumeId    String
-  clerkId     String
-  chunkIndex  Int
-  section     String?  // 'Experience' | 'Education' | 'Projects' | 'Skills' | 'General'
-  content     String   @db.Text
-  embedding   Json     // Stores Float[] embedding vector
-  createdAt   DateTime @default(now())
+  id             String   @id @default(cuid())
+  resumeId       String
+  clerkId        String
+  chunkIndex     Int
+  section        String?  // 'Experience' | 'Education' | 'Projects' | 'Skills' | 'General'
+  content        String   @db.Text
+  embedding      Unsupported("vector(384)")
+  embeddingModel String   @default("all-MiniLM-L6-v2")
+  createdAt      DateTime @default(now())
 
-  resume      Resume   @relation(fields: [resumeId], references: [id], onDelete: Cascade)
+  resume         Resume   @relation(fields: [resumeId], references: [id], onDelete: Cascade)
 
   @@index([clerkId, resumeId])
 }

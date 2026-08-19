@@ -23,48 +23,45 @@ export async function processAndStoreResumeChunks(
   if (!parsedText || !parsedText.trim()) return 0
 
   try {
-    // 1. Atomic clean-up: Delete existing chunks for this resumeId to prevent duplicate embeddings
-    if ((db as any).resumeChunk) {
-      await (db as any).resumeChunk.deleteMany({
-        where: { clerkId, resumeId }
-      })
-    }
+    // 1. Atomic clean-up: Delete existing chunks for this resumeId
+    await db.$executeRaw`DELETE FROM "ResumeChunk" WHERE "clerkId" = ${clerkId} AND "resumeId" = ${resumeId}`
 
     const rawChunks = splitResumeIntoChunks(parsedText)
     if (rawChunks.length === 0) return 0
 
-    const chunkDataArray = []
+    let storedCount = 0
     for (const chunk of rawChunks) {
       const embedding = await generateEmbedding(chunk.content)
-      chunkDataArray.push({
-        clerkId,
-        resumeId,
-        chunkIndex: chunk.index,
-        section: chunk.section,
-        content: chunk.content,
-        embedding: embedding as any,
-        embeddingModel: RAG_CONFIG.EMBEDDING_MODEL,
-      })
+      const vectorStr = `[${embedding.join(',')}]`
+
+      await db.$executeRaw`
+        INSERT INTO "ResumeChunk" (id, "resumeId", "clerkId", "chunkIndex", section, content, embedding, "embeddingModel", "createdAt")
+        VALUES (
+          gen_random_uuid()::text,
+          ${resumeId},
+          ${clerkId},
+          ${chunk.index},
+          ${chunk.section},
+          ${chunk.content},
+          ${vectorStr}::vector,
+          ${RAG_CONFIG.EMBEDDING_MODEL},
+          NOW()
+        )
+      `
+      storedCount++
     }
 
-    if ((db as any).resumeChunk) {
-      await (db as any).resumeChunk.createMany({
-        data: chunkDataArray
-      })
-    }
-
-    return chunkDataArray.length
+    return storedCount
   } catch (error: any) {
-    // Structured error logging (safe identifiers only, no PII/resume leakage)
     console.error(`[RAG_INGESTION_WARN] Failed chunk processing for resumeId="${resumeId}", clerkId="${clerkId}". Operation="processAndStoreResumeChunks", Error="${error.message || error}"`)
     return 0
   }
 }
 
 /**
- * Performs semantic similarity search against pgvector / PostgreSQL chunks.
- * STRICTLY ENFORCES SECURITY: Scoped by clerkId (userId) + resumeId.
- * Filters results using configurable SIMILARITY_THRESHOLD and topK.
+ * Performs native PostgreSQL pgvector similarity search.
+ * Cosine Distance operator (<=>) executes 100% inside PostgreSQL.
+ * Scoped by clerkId + resumeId with SIMILARITY_THRESHOLD check.
  */
 export async function retrieveRelevantResumeChunks({
   clerkId,
@@ -82,41 +79,35 @@ export async function retrieveRelevantResumeChunks({
   if (!clerkId || !resumeId || !query || !query.trim()) return []
 
   try {
-    // 1. Generate query embedding
     const queryEmbedding = await generateEmbedding(query)
+    const vectorStr = `[${queryEmbedding.join(',')}]`
 
-    // 2. Fetch candidate's own chunks for this specific resume
-    const chunks = (db as any).resumeChunk
-      ? await (db as any).resumeChunk.findMany({
-          where: {
-            clerkId,   // ← Strict User Isolation
-            resumeId,  // ← Strict Resume Isolation
-          },
-        })
-      : []
+    // Native pgvector In-Database Cosine Similarity Search Query
+    const results: any[] = await db.$queryRaw`
+      SELECT 
+        id, 
+        content, 
+        section, 
+        1 - (embedding <=> ${vectorStr}::vector) AS similarity
+      FROM "ResumeChunk"
+      WHERE "clerkId" = ${clerkId} AND "resumeId" = ${resumeId}
+      ORDER BY embedding <=> ${vectorStr}::vector ASC
+      LIMIT ${topK}
+    `
 
-    if (chunks.length === 0) return []
+    if (!Array.isArray(results)) return []
 
-    // 3. Compute Cosine Similarity = 1 - Cosine Distance
-    const scored = (chunks as any[]).map(c => {
-      const chunkVector = Array.isArray(c.embedding) ? (c.embedding as number[]) : []
-      const similarity = computeCosineSimilarity(queryEmbedding, chunkVector)
-      return {
-        id: c.id,
-        content: c.content,
-        section: c.section,
-        similarity,
-      }
-    })
-
-    // 4. Filter by configurable SIMILARITY_THRESHOLD & sort descending
-    const filtered = scored.filter(c => c.similarity >= similarityThreshold)
-    filtered.sort((a: any, b: any) => b.similarity - a.similarity)
-
-    return filtered.slice(0, topK)
+    // Convert similarity to float and apply threshold filter
+    return results
+      .map(r => ({
+        id: r.id,
+        content: r.content,
+        section: r.section,
+        similarity: typeof r.similarity === 'number' ? r.similarity : parseFloat(r.similarity),
+      }))
+      .filter(r => r.similarity >= similarityThreshold)
   } catch (error: any) {
-    // Structured error logging (safe identifiers only)
-    console.error(`[RAG_RETRIEVAL_WARN] Semantic retrieval failed for resumeId="${resumeId}", clerkId="${clerkId}". Operation="retrieveRelevantResumeChunks", Error="${error.message || error}"`)
+    console.error(`[RAG_RETRIEVAL_WARN] Native pgvector retrieval failed for resumeId="${resumeId}", clerkId="${clerkId}". Operation="retrieveRelevantResumeChunks", Error="${error.message || error}"`)
     return []
   }
 }
