@@ -1,14 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { auth } from '@clerk/nextjs/server'
 import { db } from '@/lib/db'
 
 export async function GET(req: NextRequest) {
   try {
-    const { searchParams } = new URL(req.url)
-    const clerkId = searchParams.get('clerkId')
-
-    if (!clerkId) {
-      return NextResponse.json({ error: 'Missing clerkId' }, { status: 400 })
+    const { userId } = await auth()
+    if (!userId) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
+    const clerkId = userId
 
     const resumes = await db.resume.findMany({
       where: { clerkId },

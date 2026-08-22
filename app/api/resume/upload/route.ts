@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { auth } from '@clerk/nextjs/server'
 import { db } from '@/lib/db'
 import { generateResumeSummary } from '@/lib/resume/extract'
 import { writeFile, mkdir } from 'fs/promises'
@@ -6,12 +7,17 @@ import path from 'path'
 
 export async function POST(req: Request) {
   try {
+    const { userId } = await auth()
+    if (!userId) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+    const clerkId = userId
+
     const formData = await req.formData()
     const file = formData.get('resume') as File
-    const clerkId = formData.get('clerkId') as string
 
-    if (!file || !clerkId) {
-      return NextResponse.json({ error: 'Missing file or clerkId' }, { status: 400 })
+    if (!file) {
+      return NextResponse.json({ error: 'Missing file' }, { status: 400 })
     }
 
     // 1. Upload locally (since Vercel Blob isn't configured in local dev)

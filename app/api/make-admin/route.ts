@@ -1,18 +1,19 @@
 import { NextResponse } from 'next/server'
-import { currentUser } from '@clerk/nextjs/server'
+import { auth } from '@clerk/nextjs/server'
 import { db } from '@/lib/db'
 
 export async function GET(req: Request) {
   try {
-    const user = await currentUser()
-    if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    const { userId } = await auth()
+    if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-    const updated = await db.user.update({
-      where: { clerkId: user.id },
-      data: { isAdmin: true }
-    })
+    // Check if requester is already an admin
+    const currentUserDb = await db.user.findUnique({ where: { clerkId: userId } })
+    if (!currentUserDb || !currentUserDb.isAdmin) {
+      return NextResponse.json({ error: 'Forbidden: Admin privileges required' }, { status: 403 })
+    }
 
-    return NextResponse.json({ success: true, message: 'You are now an admin!', user: updated })
+    return NextResponse.json({ success: true, message: 'User is verified admin', user: currentUserDb })
   } catch (error) {
     console.error(error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })

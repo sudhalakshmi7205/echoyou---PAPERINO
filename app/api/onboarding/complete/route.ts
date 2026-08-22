@@ -1,9 +1,15 @@
 import { NextResponse } from 'next/server'
+import { auth, currentUser } from '@clerk/nextjs/server'
 import { db } from '@/lib/db'
-import { currentUser } from '@clerk/nextjs/server'
 
 export async function POST(req: Request) {
-  const { clerkId, data } = await req.json()
+  const { userId } = await auth()
+  if (!userId) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+  const clerkId = userId
+
+  const { data } = await req.json()
   const user = await currentUser()
 
   if (user) {

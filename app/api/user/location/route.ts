@@ -1,12 +1,19 @@
 import { NextResponse } from 'next/server'
+import { auth } from '@clerk/nextjs/server'
 import { db } from '@/lib/db'
 import { geocodeIP } from '@/lib/geo/geocode'
 
 export async function POST(req: Request) {
   try {
-    const { clerkId, ip } = await req.json()
-    if (!clerkId || !ip) {
-      return NextResponse.json({ error: 'Missing data' }, { status: 400 })
+    const { userId } = await auth()
+    if (!userId) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+    const clerkId = userId
+
+    const { ip } = await req.json()
+    if (!ip) {
+      return NextResponse.json({ error: 'Missing IP' }, { status: 400 })
     }
 
     const existing = await db.user.findUnique({

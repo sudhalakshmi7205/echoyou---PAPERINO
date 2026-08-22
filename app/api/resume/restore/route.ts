@@ -1,12 +1,28 @@
 import { NextResponse } from 'next/server'
+import { auth } from '@clerk/nextjs/server'
 import { db } from '@/lib/db'
 
 export async function POST(req: Request) {
   try {
-    const { resumeId, clerkId } = await req.json()
+    const { userId } = await auth()
+    if (!userId) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+    const clerkId = userId
 
-    if (!resumeId || !clerkId) {
-      return NextResponse.json({ error: 'Missing resumeId or clerkId' }, { status: 400 })
+    const { resumeId } = await req.json()
+
+    if (!resumeId) {
+      return NextResponse.json({ error: 'Missing resumeId' }, { status: 400 })
+    }
+
+    // Verify ownership of the resume to be restored
+    const targetResume = await db.resume.findUnique({
+      where: { id: resumeId }
+    })
+
+    if (!targetResume || targetResume.clerkId !== clerkId) {
+      return NextResponse.json({ error: 'Resume not found' }, { status: 404 })
     }
 
     // Deactivate current
