@@ -7,12 +7,14 @@ const spaceGrotesk = Space_Grotesk({
   variable: "--font-space-grotesk",
   subsets: ["latin"],
   weight: ["300","400","500","600","700"],
+  fallback: ["system-ui", "sans-serif"],
 });
 
 const inter = Inter({
   variable: "--font-inter",
   subsets: ["latin"],
   weight: ["300","400","500","600","700","800"],
+  fallback: ["system-ui", "sans-serif"],
 });
 
 export const metadata: Metadata = {
