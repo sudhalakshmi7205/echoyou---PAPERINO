@@ -311,8 +311,8 @@ export default function LandingClient({ isLoggedIn }: { isLoggedIn?: boolean }) 
 
   useEffect(() => {
     try {
-      const seen = localStorage.getItem('echoyou_intro_seen') || sessionStorage.getItem('echoyou_intro_seen')
-      if (!seen) {
+      const seenInSession = sessionStorage.getItem('echoyou_intro_seen_session')
+      if (!seenInSession) {
         setIntroDone(false)
       }
     } catch (e) {
@@ -322,8 +322,7 @@ export default function LandingClient({ isLoggedIn }: { isLoggedIn?: boolean }) 
 
   const handleIntroComplete = () => {
     try {
-      localStorage.setItem('echoyou_intro_seen', 'true')
-      sessionStorage.setItem('echoyou_intro_seen', 'true')
+      sessionStorage.setItem('echoyou_intro_seen_session', 'true')
     } catch (e) {}
     setIntroDone(true)
   }
