@@ -1,6 +1,4 @@
 import { PrismaClient } from '@prisma/client'
-import { Pool } from 'pg'
-import { PrismaPg } from '@prisma/adapter-pg'
 
 declare global {
   // eslint-disable-next-line no-var
@@ -9,14 +7,10 @@ declare global {
 
 let prisma: PrismaClient
 if (process.env.NODE_ENV === 'production') {
-  const pool = new Pool({ connectionString: process.env.DATABASE_URL })
-  const adapter = new PrismaPg(pool)
-  prisma = new PrismaClient({ adapter })
+  prisma = new PrismaClient()
 } else {
   if (!global.cachedPrisma) {
-    const pool = new Pool({ connectionString: process.env.DATABASE_URL })
-    const adapter = new PrismaPg(pool)
-    global.cachedPrisma = new PrismaClient({ adapter })
+    global.cachedPrisma = new PrismaClient()
   }
   prisma = global.cachedPrisma
 }
