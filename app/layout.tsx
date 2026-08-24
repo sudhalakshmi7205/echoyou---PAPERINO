@@ -16,12 +16,30 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "EchoYou - AI Interview Platform",
-  description: "Master your next technical interview with a senior-level AI interviewer.",
+  metadataBase: new URL('https://echoyou-paperino.vercel.app'),
+  title: {
+    default: "EchoYou - AI Mock Interviews & Resume Intelligence",
+    template: "%s | EchoYou AI",
+  },
+  description: "Master technical, behavioral, and resume follow-up AI interviews with real-time feedback, detailed scorecards, and AI roadmap guidance.",
+  keywords: ["AI interview", "mock interview", "resume analysis", "ATS score", "technical interview practice", "coding interview", "Groq AI"],
   icons: {
     icon: "/favicon.svg",
     shortcut: "/favicon.svg",
     apple: "/favicon.svg",
+  },
+  openGraph: {
+    type: "website",
+    locale: "en_US",
+    url: "https://echoyou-paperino.vercel.app",
+    title: "EchoYou - AI Mock Interviews & Resume Intelligence",
+    description: "Practice real-time technical, behavioral, and resume follow-up AI interviews with instant feedback and scorecards.",
+    siteName: "EchoYou AI",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "EchoYou - AI Mock Interviews & Resume Intelligence",
+    description: "Master technical, behavioral, and resume follow-up AI interviews with real-time feedback and detailed scorecards.",
   },
 };
 
