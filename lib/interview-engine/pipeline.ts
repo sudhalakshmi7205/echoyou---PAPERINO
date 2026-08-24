@@ -51,7 +51,7 @@ export async function runPipeline(input: PipelineInput): Promise<PipelineOutput>
   return { text, thinkingMs, tokenCount }
 }
 
-// Streaming version — for real-time word-by-word output
+// Streaming version — for real-time word-by-word output with retry & rate-limit fallback
 export async function* runPipelineStream(input: PipelineInput) {
   const groq = new Groq({ apiKey: process.env.GROQ_API_KEY })
   const { userMessage, memory, promptContext } = input
@@ -64,13 +64,39 @@ export async function* runPipelineStream(input: PipelineInput) {
     ...memory.getContext()
   ]
 
-  const stream = await groq.chat.completions.create({
-    model: 'llama-3.3-70b-versatile',
-    messages,
-    max_tokens: 300,
-    temperature: 0.7,
-    stream: true,   // ← key difference
-  })
+  const candidateModels = ['llama-3.3-70b-versatile', 'llama-3.1-8b-instant']
+  let stream: any = null
+  let lastError: any = null
+
+  for (const model of candidateModels) {
+    let retries = 2
+    while (retries >= 0) {
+      try {
+        stream = await groq.chat.completions.create({
+          model,
+          messages,
+          max_tokens: 300,
+          temperature: 0.7,
+          stream: true,
+        })
+        break
+      } catch (err: any) {
+        lastError = err
+        const isRateLimit = err?.status === 429 || String(err).includes('429') || String(err).toLowerCase().includes('rate')
+        if (isRateLimit && retries > 0) {
+          retries--
+          await new Promise(r => setTimeout(r, 1000 * (3 - retries))) // exponential backoff 1s, 2s
+        } else {
+          break // try fallback model
+        }
+      }
+    }
+    if (stream) break
+  }
+
+  if (!stream) {
+    throw lastError || new Error('All AI models unavailable')
+  }
 
   let fullText = ''
   for await (const chunk of stream) {
