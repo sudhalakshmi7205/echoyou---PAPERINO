@@ -3,7 +3,7 @@ import { useRouter } from 'next/navigation'
 import { Trash2, Download, MoreVertical } from 'lucide-react'
 import { useState } from 'react'
 
-export default function ResumeActions({ clerkId, fileUrl, fileName }: { clerkId: string, fileUrl: string, fileName: string }) {
+export default function ResumeActions({ resumeId, clerkId, fileUrl, fileName }: { resumeId?: string, clerkId?: string, fileUrl: string, fileName: string }) {
   const router = useRouter()
   const [isDeleting, setIsDeleting] = useState(false)
   const [isOpen, setIsOpen] = useState(false)
@@ -15,7 +15,6 @@ export default function ResumeActions({ clerkId, fileUrl, fileName }: { clerkId:
       const res = await fetch('/api/resume/delete', {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ clerkId })
       })
       if (res.ok) {
         router.refresh()
@@ -29,6 +28,8 @@ export default function ResumeActions({ clerkId, fileUrl, fileName }: { clerkId:
       setIsOpen(false)
     }
   }
+
+  const downloadHref = resumeId ? `/api/resume/download?id=${resumeId}` : fileUrl
 
   return (
     <div className="relative">
@@ -44,7 +45,7 @@ export default function ResumeActions({ clerkId, fileUrl, fileName }: { clerkId:
           <div className="fixed inset-0 z-10" onClick={() => setIsOpen(false)} />
           <div className="absolute right-0 mt-1 w-48 bg-white border border-gray-100 rounded-lg shadow-lg py-1 z-20">
             <a 
-              href={fileUrl} 
+              href={downloadHref} 
               target="_blank" 
               rel="noreferrer"
               download={fileName}

@@ -234,6 +234,7 @@ model Resume {
   clerkId     String
   fileName    String
   fileUrl     String
+  storageKey  String?
   fileSize    Int
   isActive    Boolean         @default(true)
   parsedText  String?         @db.Text
@@ -246,12 +247,13 @@ model Resume {
 }
 
 model ResumeVersion {
-  id        String   @id @default(cuid())
-  resumeId  String
-  resume    Resume   @relation(fields: [resumeId], references: [id], onDelete: Cascade)
-  fileName  String
-  fileUrl   String
-  createdAt DateTime @default(now())
+  id          String   @id @default(cuid())
+  resumeId    String
+  resume      Resume   @relation(fields: [resumeId], references: [id], onDelete: Cascade)
+  fileName    String
+  fileUrl     String
+  storageKey  String?
+  createdAt   DateTime @default(now())
 }
 
 model ShareableReport {

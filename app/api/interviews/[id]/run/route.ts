@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { currentUser } from '@clerk/nextjs/server'
+import { auth } from '@clerk/nextjs/server'
 import { db } from '@/lib/db'
 import { executeCode } from '@/lib/coding/piston'
 
@@ -8,8 +8,16 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const resolvedParams = await params
-  const user = await currentUser()
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  const { userId } = await auth()
+  if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+  // Verify interview ownership
+  const interview = await db.interview.findUnique({
+    where: { id: resolvedParams.id }
+  })
+  if (!interview || interview.clerkId !== userId) {
+    return NextResponse.json({ error: 'Interview not found' }, { status: 404 })
+  }
 
   const { code, language, problemId, runAll } = await req.json()
 

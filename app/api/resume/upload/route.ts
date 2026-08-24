@@ -20,16 +20,29 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Missing file' }, { status: 400 })
     }
 
-    // 1. Upload locally (since Vercel Blob isn't configured in local dev)
-    const buffer = Buffer.from(await file.arrayBuffer())
-    const filename = `${Date.now()}-${file.name.replace(/[^a-zA-Z0-9.-]/g, '_')}`
-    const uploadDir = path.join(process.cwd(), 'public', 'uploads', clerkId)
-    await mkdir(uploadDir, { recursive: true })
-    const filePath = path.join(uploadDir, filename)
-    await writeFile(filePath, buffer)
-    const fileUrl = `/uploads/${clerkId}/${filename}`
+    // PDF Type & Size Validation (Max 10MB)
+    const isPdf = file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf')
+    if (!isPdf) {
+      return NextResponse.json({ error: 'Only PDF files are allowed' }, { status: 400 })
+    }
+    if (file.size > 10 * 1024 * 1024) {
+      return NextResponse.json({ error: 'File size exceeds 10MB limit' }, { status: 400 })
+    }
 
-    // 2. Extract text from PDF
+    const buffer = Buffer.from(await file.arrayBuffer())
+
+    // 1. Upload to Private Supabase Bucket ("resumes")
+    let storageKey: string | null = null
+    try {
+      const { uploadPrivateResume } = await import('@/lib/storage/supabase')
+      storageKey = await uploadPrivateResume(clerkId, file.name, buffer)
+    } catch (err) {
+      console.warn('[UPLOAD_WARN] Supabase storage upload skipped or failed, storing metadata:', err)
+    }
+
+    const fileUrl = `/api/resume/file?key=${encodeURIComponent(storageKey || '')}`
+
+    // 2. Extract text from PDF in memory
     const pdf = require('pdf-parse/lib/pdf-parse.js')
     const data = await pdf(buffer)
     const parsedText = data.text
@@ -38,7 +51,6 @@ export async function POST(req: Request) {
     const jobDescription = formData.get('jobDescription') as string | null
 
     // 3. AI analysis
-    // We pass JD to the prompt if provided.
     const { summary, skills, ats } = await generateResumeSummary(parsedText, jobDescription)
 
     // 4. Archive old active resume as a version
@@ -52,6 +64,7 @@ export async function POST(req: Request) {
           resumeId: existing.id,
           fileName: existing.fileName,
           fileUrl: existing.fileUrl,
+          storageKey: existing.storageKey,
         }
       })
       await db.resume.update({
@@ -66,6 +79,7 @@ export async function POST(req: Request) {
         clerkId,
         fileName: file.name,
         fileUrl: fileUrl,
+        storageKey: storageKey,
         fileSize: file.size,
         parsedText,
         aiSummary: summary,

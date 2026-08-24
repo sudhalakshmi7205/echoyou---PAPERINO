@@ -3,7 +3,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Trash2, Loader2 } from 'lucide-react'
 
-export default function ResumePreview({ fileUrl, fileName }: { fileUrl: string, fileName: string }) {
+export default function ResumePreview({ resumeId, fileUrl, fileName }: { resumeId?: string, fileUrl: string, fileName: string }) {
   const router = useRouter()
   const [isDeleting, setIsDeleting] = useState(false)
 
@@ -20,6 +20,8 @@ export default function ResumePreview({ fileUrl, fileName }: { fileUrl: string, 
       setIsDeleting(false)
     }
   }
+
+  const iframeSrc = resumeId ? `/api/resume/file?id=${resumeId}#view=FitH` : `${fileUrl}#view=FitH`
 
   return (
     <div className="bg-[#111620] rounded-xl border border-gray-800 shadow-sm overflow-hidden flex flex-col h-[600px]">
@@ -39,7 +41,7 @@ export default function ResumePreview({ fileUrl, fileName }: { fileUrl: string, 
       </div>
       <div className="flex-1 bg-gray-100 relative">
         <iframe 
-          src={`${fileUrl}#view=FitH`} 
+          src={iframeSrc} 
           className="w-full h-full border-none filter contrast-[0.95]"
           title="Resume PDF Preview"
         />
