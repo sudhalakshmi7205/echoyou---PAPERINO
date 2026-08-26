@@ -1,6 +1,6 @@
 import Groq from 'groq-sdk'
 
-const groq = new Groq({ apiKey: process.env.GROQ_API_KEY })
+function getGroq() { return new Groq({ apiKey: process.env.GROQ_API_KEY || '' }) }
 
 export async function reviewCode({
   code,
@@ -15,7 +15,7 @@ export async function reviewCode({
   testsPassed: number
   testsTotal: number
 }) {
-  const completion = await groq.chat.completions.create({
+  const completion = await getGroq().chat.completions.create({
     messages: [
       {
         role: 'system',

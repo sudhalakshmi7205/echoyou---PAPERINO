@@ -3,7 +3,8 @@ import { currentUser } from '@clerk/nextjs/server'
 import { db } from '@/lib/db'
 import Groq from 'groq-sdk'
 
-const groq = new Groq({ apiKey: process.env.GROQ_API_KEY })
+function getGroq() { return new Groq({ apiKey: process.env.GROQ_API_KEY || '' }) }
+
 
 export async function POST(req: Request) {
   try {
@@ -28,7 +29,7 @@ export async function POST(req: Request) {
       Make it sound impressive, confident, and tailored to the tech industry.
     `
 
-    const completion = await groq.chat.completions.create({
+    const completion = await getGroq().chat.completions.create({
       messages: [{ role: 'user', content: prompt }],
       model: 'llama-3.1-8b-instant',
       temperature: 0.5,

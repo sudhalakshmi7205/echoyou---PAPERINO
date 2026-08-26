@@ -1,7 +1,7 @@
 import Groq from 'groq-sdk'
 import { getFeatureModel } from '../aiModelConfig'
 
-const groq = new Groq({ apiKey: process.env.GROQ_API_KEY })
+function getGroq() { return new Groq({ apiKey: process.env.GROQ_API_KEY || '' }) }
 
 export interface ATSCategoryScores {
   hardSkillsScore: number // 40% weight
@@ -290,7 +290,7 @@ ${safeResumeText}
     let rawContent: string | null = null
 
     try {
-      const completion = await groq.chat.completions.create({
+      const completion = await getGroq().chat.completions.create({
         messages: [
           { role: 'system', content: systemPrompt },
           { role: 'user', content: userContent }
@@ -302,7 +302,7 @@ ${safeResumeText}
       rawContent = completion.choices[0]?.message?.content || null
     } catch (modelErr) {
       console.warn(`Primary model ${selectedModel} failed, trying fallback llama-3.3-70b-versatile:`, modelErr)
-      const fallbackCompletion = await groq.chat.completions.create({
+      const fallbackCompletion = await getGroq().chat.completions.create({
         messages: [
           { role: 'system', content: systemPrompt },
           { role: 'user', content: userContent }

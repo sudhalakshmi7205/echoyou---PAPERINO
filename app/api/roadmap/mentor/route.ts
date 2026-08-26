@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import { currentUser } from '@clerk/nextjs/server'
 import Groq from 'groq-sdk'
 
-const groq = new Groq({ apiKey: process.env.GROQ_API_KEY })
+function getGroq() { return new Groq({ apiKey: process.env.GROQ_API_KEY || '' }) }
 
 export async function POST(req: Request) {
   try {
@@ -19,7 +19,7 @@ User Question/Doubt:
 
 Provide a clear, concise, 2-3 paragraph technical explanation with code examples if relevant. Be direct, encouraging, and clear.`
 
-    const completion = await groq.chat.completions.create({
+    const completion = await getGroq().chat.completions.create({
       messages: [{ role: 'user', content: prompt }],
       model: 'llama-3.1-8b-instant'
     })

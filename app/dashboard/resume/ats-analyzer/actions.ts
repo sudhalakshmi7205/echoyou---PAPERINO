@@ -5,7 +5,7 @@ import { currentUser } from '@clerk/nextjs/server'
 import { analyzeResumeATS } from '@/lib/ai/ats-analyzer'
 import Groq from 'groq-sdk'
 
-const groq = new Groq({ apiKey: process.env.GROQ_API_KEY })
+function getGroq() { return new Groq({ apiKey: process.env.GROQ_API_KEY || '' }) }
 
 export async function runATSAnalysis(resumeId: string, targetRole?: string, jobDescription?: string) {
   const user = await currentUser()
@@ -111,7 +111,7 @@ Return a JSON object with two fields:
 Return ONLY valid JSON.
 `
 
-  const completion = await groq.chat.completions.create({
+  const completion = await getGroq().chat.completions.create({
     messages: [{ role: 'system', content: prompt }],
     model: 'llama-3.3-70b-versatile',
     temperature: 0.2,

@@ -4,7 +4,7 @@ import { Groq } from 'groq-sdk'
 import { db } from '@/lib/db'
 import { currentUser } from '@clerk/nextjs/server'
 
-const groq = new Groq({ apiKey: process.env.GROQ_API_KEY })
+function getGroq() { return new Groq({ apiKey: process.env.GROQ_API_KEY || '' }) }
 
 export async function generateRoadmap(currentRole: string, desiredRole: string, skills: string[]) {
   const user = await currentUser()
@@ -29,7 +29,7 @@ Return ONLY a valid JSON object with the following structure:
 Make the roadmap realistic, actionable, and specific to their gap in skills. Provide 4 to 6 steps.`
 
   try {
-    const completion = await groq.chat.completions.create({
+    const completion = await getGroq().chat.completions.create({
       messages: [{ role: 'user', content: prompt }],
       model: 'llama-3.3-70b-versatile',
       temperature: 0.5,

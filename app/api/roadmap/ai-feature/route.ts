@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import { currentUser } from '@clerk/nextjs/server'
 import Groq from 'groq-sdk'
 
-const groq = new Groq({ apiKey: process.env.GROQ_API_KEY })
+function getGroq() { return new Groq({ apiKey: process.env.GROQ_API_KEY || '' }) }
 
 export async function POST(req: Request) {
   try {
@@ -28,7 +28,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Invalid feature type' }, { status: 400 })
     }
 
-    const completion = await groq.chat.completions.create({
+    const completion = await getGroq().chat.completions.create({
       messages: [{ role: 'user', content: prompt }],
       model: 'llama-3.1-8b-instant',
       temperature: 0.5,

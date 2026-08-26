@@ -4,7 +4,7 @@ import { db } from '@/lib/db'
 import Groq from 'groq-sdk'
 import { getFeatureModel } from '../aiModelConfig'
 
-const groq = new Groq({ apiKey: process.env.GROQ_API_KEY })
+function getGroq() { return new Groq({ apiKey: process.env.GROQ_API_KEY || '' }) }
 
 export async function runEvaluation(interviewId: string): Promise<void> {
   // 1. Load everything needed
@@ -64,7 +64,7 @@ export async function runEvaluation(interviewId: string): Promise<void> {
 
   // 3. Call Groq with configured High-Reasoning LLM (DeepSeek R1 / Llama 3.3 70B)
   const evaluationModel = getFeatureModel('interview_feedback') || 'deepseek-r1-distill-llama-70b'
-  const response = await groq.chat.completions.create({
+  const response = await getGroq().chat.completions.create({
     messages: [
       { role: 'user', content: prompt }
     ],

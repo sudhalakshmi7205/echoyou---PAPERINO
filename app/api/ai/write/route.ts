@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import Groq from 'groq-sdk'
 
-const groq = new Groq({ apiKey: process.env.GROQ_API_KEY })
+function getGroq() {
+  return new Groq({ apiKey: process.env.GROQ_API_KEY || '' })
+}
 
 export async function POST(req: NextRequest) {
   try {
@@ -60,7 +62,7 @@ Do not return any explanations, markdown, or other text.`
       systemPrompt += "\n\nWrite professional resume content."
     }
 
-    const completion = await groq.chat.completions.create({
+    const completion = await getGroq().chat.completions.create({
       messages: [
         { role: 'system', content: systemPrompt },
         { role: 'user', content: prompt }
